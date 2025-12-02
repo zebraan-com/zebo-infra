@@ -1,0 +1,88 @@
+name: Terraform Dev
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'terraform/**'
+      - '.github/workflows/terraform-dev.yaml'
+  workflow_dispatch:
+
+jobs:
+  terraform:
+    name: Validate, Plan, and Apply (dev)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform/environments/dev
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      # Auth using a JSON key stored in GitHub Secrets.
+      # Prefer Workload Identity Federation in production to avoid long-lived keys.
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.7
+
+      # Compose a CI tfvars file from GitHub Secrets/Vars so we don't commit dev.tfvars
+      - name: Write dev.ci.tfvars from secrets
+        run: |
+          cat > dev.ci.tfvars <<'EOF'
+          project_id              = "${PROJECT_ID}"
+          region                  = "${REGION}"
+          registry_id             = "${REGISTRY_ID}"
+          node_machine_type       = "${NODE_MACHINE_TYPE}"
+          min_nodes               = ${MIN_NODES}
+          max_nodes               = ${MAX_NODES}
+          gke_deletion_protection = ${GKE_DELETION_PROTECTION}
+
+          # Secrets used by the secret_manager module
+          secrets = {
+            ZEO_DB_PASSWORD = "${ZEO_DB_PASSWORD}"
+            ZEO_OPENAI_KEY  = "${ZEO_OPENAI_KEY}"
+            ZEO_MF_UTIL_KEY = "${ZEO_MF_UTIL_KEY}"
+          }
+          EOF
+        env:
+          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          REGION: ${{ vars.GCP_REGION || 'asia-south1' }}
+          REGISTRY_ID: ${{ vars.ARTIFACT_REGISTRY_ID || 'zebo-registry' }}
+          NODE_MACHINE_TYPE: ${{ vars.NODE_MACHINE_TYPE || 'e2-small' }}
+          MIN_NODES: ${{ vars.MIN_NODES || '0' }}
+          MAX_NODES: ${{ vars.MAX_NODES || '1' }}
+          # Flip to 'false' on a destroy workflow; keep true on main applies
+          GKE_DELETION_PROTECTION: ${{ vars.GKE_DELETION_PROTECTION || 'true' }}
+          # Sensitive secrets
+          ZEO_DB_PASSWORD: ${{ secrets.ZEO_DB_PASSWORD }}
+          ZEO_OPENAI_KEY: ${{ secrets.ZEO_OPENAI_KEY }}
+          ZEO_MF_UTIL_KEY: ${{ secrets.ZEO_MF_UTIL_KEY }}
+
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      - name: Terraform Fmt
+        run: terraform fmt -check
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -input=false -var-file=dev.ci.tfvars
+
+      - name: Terraform Apply (main branch)
+        if: github.ref == 'refs/heads/main'
+        run: terraform apply -input=false -auto-approve -var-file=dev.ci.tfvars
