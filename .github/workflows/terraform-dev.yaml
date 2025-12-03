@@ -41,7 +41,7 @@ jobs:
       # Compose a CI tfvars file from GitHub Secrets/Vars so we don't commit dev.tfvars
       - name: Write dev.ci.tfvars from secrets
         run: |
-          cat > dev.ci.tfvars <<'EOF'
+          cat > dev.ci.tfvars <<EOF
           project_id              = "${PROJECT_ID}"
           region                  = "${REGION}"
           registry_id             = "${REGISTRY_ID}"
