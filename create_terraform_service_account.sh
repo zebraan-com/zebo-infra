@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Set project ID and service account name
 PROJECT_ID="zebraan-gcp-zebo"
@@ -32,8 +33,21 @@ gcloud storage buckets add-iam-policy-binding "gs://${BUCKET}" \
   --role="roles/storage.objectAdmin" \
   --project "${PROJECT_ID}"
 
+# Allow the CI SA to use the default Compute Engine service account (required by GKE when using default SA)
+PROJECT_NUMBER=$(gcloud projects describe "${PROJECT_ID}" --format='value(projectNumber)')
+DEFAULT_COMPUTE_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+
+gcloud iam service-accounts add-iam-policy-binding "${DEFAULT_COMPUTE_SA}" \
+  --member="serviceAccount:${SA_EMAIL}" \
+  --role="roles/iam.serviceAccountUser" \
+  --project "${PROJECT_ID}"
+
+echo "Granted roles/iam.serviceAccountUser on ${DEFAULT_COMPUTE_SA} to ${SA_EMAIL}"
+
 # Create a service account key and save it to a file
 
 gcloud iam service-accounts keys create key.json \
   --iam-account "${SA_EMAIL}" \
   --project "${PROJECT_ID}"
+
+echo "Created service account key at key.json (remember to add it to GitHub Actions secret GCP_CREDENTIALS and then delete the local file)"

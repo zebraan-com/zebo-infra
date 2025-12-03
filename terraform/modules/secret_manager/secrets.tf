@@ -25,7 +25,9 @@ resource "google_secret_manager_secret" "secrets" {
 }
 
 resource "google_secret_manager_secret_version" "secret_versions" {
-  for_each = var.secrets
+  # Create a SecretVersion only for non-empty values
+  # This avoids 400 errors (payload is required) when a value is empty
+  for_each = { for k, v in var.secrets : k => v if try(length(trimspace(v)) > 0, false) }
 
   secret      = google_secret_manager_secret.secrets[each.key].id
   secret_data = each.value
