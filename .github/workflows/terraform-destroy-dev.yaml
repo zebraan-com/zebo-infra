@@ -71,6 +71,9 @@ jobs:
       - name: Terraform Init
         run: terraform init -input=false
 
+      - name: Flip deletion_protection off on GKE cluster
+        run: terraform apply -input=false -auto-approve -var-file=dev.ci.tfvars -target=module.gke_cluster.google_container_cluster.primary
+
       - name: Terraform Plan (destroy)
         run: terraform plan -destroy -input=false -var-file=dev.ci.tfvars
 
