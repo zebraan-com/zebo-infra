@@ -162,3 +162,58 @@ terraform destroy -var-file=dev.tfvars
 
 - Deploy application manifests/Helm charts to the GKE cluster.
 - Configure Workload Identity if your workload needs to access GCP APIs.
+
+## CI/CD with GitHub Actions (Apply and Destroy)
+
+This repo includes two workflows under `.github/workflows/` for managing the `dev` environment with Terraform:
+
+- `terraform-dev.yaml` — Validate, Plan, and Apply on push to `main`
+- `terraform-destroy-dev.yaml` — Manual destroy via workflow_dispatch
+
+### Required repository secrets
+
+Set these in GitHub → `Settings` → `Secrets and variables` → `Actions` → `Secrets`:
+
+- `GCP_CREDENTIALS`: JSON key for a GCP Service Account that can manage the resources and access the Terraform state bucket.
+- `GCP_PROJECT_ID`: The GCP project ID (e.g., `zebraan-gcp-zebo`).
+- `ZEO_DB_PASSWORD`, `ZEO_OPENAI_KEY`, `ZEO_MF_UTIL_KEY`: Secret Manager values (can be empty; SecretVersion creation is skipped for empty values).
+
+To create the CI service account and key locally, you can use:
+
+```
+./create_terraform_service_account.sh
+```
+
+This script:
+
+- Creates `terraform-ci@<project>.iam.gserviceaccount.com`.
+- Grants required project roles (GKE, Artifact Registry, Secret Manager, IAM, Service Usage, Compute Network, Project IAM Admin).
+- Grants `roles/storage.objectAdmin` on the GCS bucket used for Terraform state.
+- Grants `roles/iam.serviceAccountUser` on the default Compute Engine service account (required by GKE when using the default node SA).
+- Generates `key.json` (gitignored) which should be copied into the `GCP_CREDENTIALS` GitHub secret (then delete the local file).
+
+### Recommended repository variables
+
+Set these in GitHub → `Settings` → `Secrets and variables` → `Actions` → `Variables`:
+
+- `GCP_REGION` (e.g., `asia-south1`)
+- `ARTIFACT_REGISTRY_ID` (e.g., `zebo-registry`)
+- `NODE_MACHINE_TYPE` (e.g., `e2-small`)
+- `MIN_NODES` (e.g., `0`)
+- `MAX_NODES` (e.g., `1`)
+- `GKE_DELETION_PROTECTION` (default `true`; set to `false` only for destroy runs)
+
+### How the workflows work
+
+- `terraform-dev.yaml` (Apply):
+  - On push to `main`, checks out code, authenticates to GCP with `GCP_CREDENTIALS`, writes a `dev.ci.tfvars` using your repo secrets/vars, then runs `terraform init`, `fmt -check`, `validate`, `plan`, and `apply`.
+
+- `terraform-destroy-dev.yaml` (Destroy):
+  - Trigger manually via GitHub Actions → "Terraform Destroy Dev" → "Run workflow".
+  - Prompts for a confirmation string `destroy`.
+  - Writes `dev.ci.tfvars` with `gke_deletion_protection = false`, then runs `terraform plan -destroy` and `terraform destroy`.
+
+### Notes
+
+- The Terraform backend is configured in `terraform/environments/dev/provider.tf` to use a GCS bucket (`zebo-terraform-state`). Ensure the CI SA has access to this bucket.
+- If you prefer not to use a JSON key in GitHub, you can migrate the workflows to Google Workload Identity Federation. The `google-github-actions/auth` action supports this; open an issue and we can provide a WIF setup guide.
