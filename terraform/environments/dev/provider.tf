@@ -11,7 +11,7 @@ terraform {
     bucket = "zebo-terraform-state"
     prefix = "terraform/state/zebraan-gcp-zebo"
   }
-  
+
   required_version = ">= 1.5.0"
 
   required_providers {

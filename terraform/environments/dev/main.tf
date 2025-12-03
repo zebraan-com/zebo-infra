@@ -27,18 +27,18 @@ module "secret_manager" {
 module "gke_cluster" {
   source = "../../modules/gke"
 
-  project_id        = var.project_id
-  region            = var.region
-  cluster_name      = "${var.environment}-gke-cluster"
-  
+  project_id   = var.project_id
+  region       = var.region
+  cluster_name = "${var.environment}-gke-cluster"
+
   # Use custom VPC/subnet so the module can create secondary ranges
-  network_name      = "zebo-gke-net"
-  subnetwork_name   = "zebo-gke-subnet"
-  
+  network_name    = "zebo-gke-net"
+  subnetwork_name = "zebo-gke-subnet"
+
   # Secondary IP ranges (required for VPC-native clusters)
   ip_range_pods     = "10.1.0.0/16"
   ip_range_services = "10.2.0.0/20"
-  
+
   # Node pool configuration
   node_machine_type = var.node_machine_type
   min_nodes         = var.min_nodes
