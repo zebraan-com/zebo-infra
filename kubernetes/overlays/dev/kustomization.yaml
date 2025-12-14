@@ -11,7 +11,7 @@ commonLabels:
 
 images:
   - name: asia-south1-docker.pkg.dev/zebraan-gcp-zebo/zebo-registry/zebo-app
-    newTag: sha-6c80a9ab190849
+    newTag: sha-6c80a9a
 
 patchesStrategicMerge:
   - patch-deployment.yaml
