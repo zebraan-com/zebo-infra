@@ -1,0 +1,21 @@
+# kubernetes/overlays/prod/patch-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zebo-app
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+      - name: app
+        env:
+        - name: ENVIRONMENT
+          value: "production"
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+          limits:
+            cpu: "2000m"
+            memory: "2Gi"

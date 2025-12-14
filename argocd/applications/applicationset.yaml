@@ -1,0 +1,31 @@
+# argocd/applications/applicationset.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: zebo-apps
+  namespace: argocd
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/zebraan-com/zebo-infra.git
+        revision: HEAD
+        files:
+          - path: "kubernetes/overlays/*/kustomization.yaml"
+  template:
+    metadata:
+      name: '{{path[2]}}-zebo'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/zebraan-com/zebo-infra.git
+        targetRevision: HEAD
+        path: kubernetes/overlays/{{path[2]}}
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: zebo-{{path[2]}}
+      syncPolicy:
+        automated:
+          selfHeal: true
+          prune: true
+        syncOptions:
+          - CreateNamespace=true

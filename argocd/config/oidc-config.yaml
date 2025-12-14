@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cmd-params-cm
+  namespace: argocd
+data:
+  oidc.config: |
+    name: GitHub
+    issuer: https://github.com
+    clientID: $github-client-id
+    clientSecret: $github-client-secret
+    requestedScopes: ["read:org", "user:email"]

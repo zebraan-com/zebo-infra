@@ -217,3 +217,119 @@ Set these in GitHub → `Settings` → `Secrets and variables` → `Actions` →
 
 - The Terraform backend is configured in `terraform/environments/dev/provider.tf` to use a GCS bucket (`zebo-terraform-state`). Ensure the CI SA has access to this bucket.
 - If you prefer not to use a JSON key in GitHub, you can migrate the workflows to Google Workload Identity Federation. The `google-github-actions/auth` action supports this; open an issue and we can provide a WIF setup guide.
+
+## Argo CD Setup
+
+### Prerequisites
+
+1. A running GKE cluster (created via Terraform)
+2. `kubectl` configured to connect to your cluster
+3. `argocd` CLI installed ([installation guide](https://argo-cd.readthedocs.io/en/stable/cli_installation/))
+
+### Installation
+
+1. Make the installation script executable and run it:
+   ```bash
+   chmod +x install-argocd.sh
+   ./install-argocd.sh
+   ```
+   This will:
+   - Create the Argo CD namespace
+   - Install Argo CD using Kustomize
+   - Wait for Argo CD to be ready
+   - Display the initial admin password
+   - Apply the root application that manages all other applications
+
+2. Access the Argo CD UI:
+   ```bash
+   kubectl port-forward svc/argocd-server -n argocd 8080:443
+   ```
+   Then open https://localhost:8080 in your browser
+   - Username: `admin`
+   - Password: (from the installation output)
+
+### GitHub OIDC Setup (Optional but Recommended)
+
+1. Create a GitHub OAuth App:
+   - Go to GitHub Settings > Developer settings > OAuth Apps > New OAuth App
+   - Homepage URL: `https://argocd.your-domain.com` (or `https://localhost:8080` for local testing)
+   - Authorization callback URL: `https://argocd.your-domain.com/auth/callback`
+
+2. Update `argocd/config/oidc-config.yaml` with your GitHub OAuth App credentials:
+   ```yaml
+   oidc.config: |
+     name: GitHub
+     issuer: https://github.com
+     clientID: $github-client-id  # From GitHub OAuth App
+     clientSecret: $github-client-secret  # From GitHub OAuth App
+     requestedScopes: ["read:org", "user:email"]
+   ```
+
+3. Apply the OIDC configuration:
+   ```bash
+   kubectl apply -f argocd/config/oidc-config.yaml
+   kubectl rollout restart deployment argocd-server -n argocd
+   ```
+
+### Repository Structure
+
+```
+argocd/
+  applications/       # ApplicationSet definitions
+  config/            # RBAC and OIDC configurations
+  install/           # Argo CD installation manifests
+  root-application.yaml  # Root application that manages all other applications
+
+kubernetes/
+  base/              # Base kustomization and common resources
+  overlays/
+    dev/             # Development environment configuration
+    prod/            # Production environment configuration
+```
+
+### Managing Applications
+
+Applications are defined in `argocd/applications/` and automatically synced by Argo CD. The ApplicationSet will automatically discover and manage applications based on the directory structure in `kubernetes/overlays/`.
+
+### GitHub Actions Integration
+
+The repository includes GitHub Actions workflows for:
+
+1. **Deploy to Dev** (`.github/workflows/deploy-dev.yaml`):
+   - Triggered on push to main branch
+   - Builds and deploys the application to the dev environment
+
+2. **Update Image Tag** (`.github/workflows/update-image-tag.yaml`):
+   - Triggered when Dockerfile or deployment manifests change
+   - Updates the image tag in the Kubernetes manifests
+   - Creates a PR with the changes
+
+### Required GitHub Secrets
+
+Add these secrets to your GitHub repository (Settings > Secrets > Actions):
+
+- `GCP_CREDENTIALS`: JSON key for a GCP Service Account with necessary permissions
+- `GCP_PROJECT_ID`: Your GCP project ID
+- `GITHUB_TOKEN`: For creating pull requests (default `GITHUB_TOKEN` is usually sufficient)
+
+### Troubleshooting
+
+1. **Argo CD Sync Issues**:
+   ```bash
+   # Check application status
+   argocd app get <app-name>
+   
+   # View sync status
+   argocd app sync <app-name>
+   
+   # View logs
+   kubectl logs -n argocd -l app.kubernetes.io/name=argocd-application-controller
+   ```
+
+2. **Access Denied Errors**:
+   - Ensure the GCP service account has the necessary IAM permissions
+   - Check the Argo CD RBAC configuration in `argocd/config/rbac-config.yaml`
+
+3. **Image Pull Errors**:
+   - Ensure the GKE cluster has pull access to the Artifact Registry
+   - Check the image pull secret is properly configured

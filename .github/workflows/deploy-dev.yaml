@@ -1,0 +1,41 @@
+# .github/workflows/deploy-dev.yaml
+name: Deploy to Dev
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'kubernetes/**'
+      - '.github/workflows/deploy-dev.yaml'
+
+jobs:
+  deploy:
+    name: Deploy to GKE
+    runs-on: ubuntu-latest
+    environment: dev
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+        service_account_key: ${{ secrets.GCP_SA_KEY }}
+        export_default_credentials: true
+
+    - name: Install kubectl
+      run: gcloud components install kubectl
+
+    - name: Configure kubectl
+      run: |
+        gcloud container clusters get-credentials ${{ vars.GKE_CLUSTER }} \
+          --region ${{ vars.GCP_REGION }} \
+          --project ${{ secrets.GCP_PROJECT_ID }}
+
+    - name: Deploy to GKE
+      run: |
+        cd kubernetes/overlays/dev
+        kubectl apply -k .

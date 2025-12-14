@@ -1,0 +1,42 @@
+# kubernetes/base/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zebo-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zebo
+  template:
+    metadata:
+      labels:
+        app: zebo
+    spec:
+      containers:
+      - name: app
+        image: asia-south1-docker.pkg.dev/zebraan-gcp-zebo/zebo-registry/zebo-app:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: ENVIRONMENT
+          value: "base"
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
