@@ -11,7 +11,7 @@ commonLabels:
 
 images:
   - name: asia-south1-docker.pkg.dev/zebraan-gcp-zebo/zebo-registry/zebo-app
-    newTag: v1.0.0  # You'll want to pin to specific versions in prod
+    newTag: b190849
 
 patchesStrategicMerge:
   - patch-deployment.yaml
