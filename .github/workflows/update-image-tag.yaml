@@ -1,13 +1,8 @@
-name: Update Image Tag
-
+name: Update Image Tag (from app)
 on:
-  push:
-    branches: [main]
-    paths:
-      - '**/Dockerfile'
-      - '**/deployment.yaml'
+  repository_dispatch:
+    types: [update-image-tag]
 
-# Allow the workflow to create and commit changes
 permissions:
   contents: write
   pull-requests: write
@@ -16,51 +11,31 @@ jobs:
   update-tag:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Needed for git diff and version tags
-      
+          fetch-depth: 0
+
       - name: Set up Git identity
         run: |
           git config --global user.name 'GitHub Actions'
           git config --global user.email 'actions@github.com'
-      
-      - name: Update image tag
-        id: update-tag
+
+      - name: Update kustomization newTag
+        env:
+          NEW_TAG: ${{ github.event.client_payload.tag }}
         run: |
-          # Get the short commit hash
-          NEW_TAG=$(git rev-parse --short HEAD)
-          echo "Updating image tag to: $NEW_TAG"
-          
-          # Update kustomization files
+          echo "Updating image tag to: ${NEW_TAG}"
           for file in kubernetes/overlays/*/kustomization.yaml; do
             if [ -f "$file" ]; then
               echo "Updating $file"
-              sed -i "s|newTag: .*|newTag: $NEW_TAG|" "$file"
+              sed -i "s|newTag: .*|newTag: ${NEW_TAG}|" "$file"
             fi
           done
-          
-          # Check if there are any changes to commit
+
           if ! git diff --quiet; then
             git add kubernetes/overlays/
-            git commit -m "ci: update image tag to $NEW_TAG"
+            git commit -m "ci: update image tag to ${NEW_TAG}"
             git push
-            echo "::set-output name=updated::true"
-            echo "Successfully updated image tag to $NEW_TAG"
           else
             echo "No changes to commit"
-            echo "::set-output name=updated::false"
           fi
-        
-      - name: Create Pull Request
-        if: steps.update-tag.outputs.updated == 'true'
-        uses: peter-evans/create-pull-request@v4
-        with:
-          commit-message: "chore: update image tag to ${{ steps.update-tag.outputs.new-tag }}"
-          title: "chore: update image tag to ${{ steps.update-tag.outputs.new-tag }}"
-          body: "Automated PR to update image tag to ${{ steps.update-tag.outputs.new-tag }}"
-          branch: "update-image-tag-${{ steps.update-tag.outputs.new-tag }}"
-          base: main
-          delete-branch: true
-          draft: false

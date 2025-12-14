@@ -34,7 +34,7 @@ variable "min_nodes" {
 variable "max_nodes" {
   description = "Maximum number of nodes in the node pool"
   type        = number
-  default     = 3
+  default     = 1
 }
 
 variable "deletion_protection" {
