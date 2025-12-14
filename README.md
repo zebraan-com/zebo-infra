@@ -110,6 +110,15 @@ gcloud container clusters get-credentials <cluster_name> \
   --region <region> \
   --project <project_id>
 
+gcloud container clusters get-credentials dev-gke-cluster --region asia-south1
+
+# View current context
+kubectl config current-context
+
+# View all contexts
+kubectl config get-contexts
+
+# List nodes in the cluster
 kubectl get nodes
 ```
 
