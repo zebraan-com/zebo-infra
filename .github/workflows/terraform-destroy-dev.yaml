@@ -29,13 +29,21 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Authenticate to Google Cloud (JSON key)
+        id: auth
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_CREDENTIALS }}
-          export_default_credentials: true
+          create_credentials_file: true
+          export_environment_variables: true
 
       - name: Verify access to Terraform state bucket
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
+          CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE: ${{ steps.auth.outputs.credentials_file_path }}
         run: |
+          echo "Using credentials file: $GOOGLE_APPLICATION_CREDENTIALS"
+          echo "gcloud active account(s):"
+          gcloud auth list --filter=status:ACTIVE --format='value(account)'
           echo "Listing bucket gs://zebo-terraform-state to verify auth..."
           gcloud storage ls gs://zebo-terraform-state || gsutil ls gs://zebo-terraform-state
 
