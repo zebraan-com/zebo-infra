@@ -36,11 +36,22 @@ jobs:
           create_credentials_file: true
           export_environment_variables: true
 
+      - name: Write credentials to file (raw JSON)
+        run: |
+          echo "$GCP_CREDENTIALS" > $GITHUB_WORKSPACE/sa-key.json
+          # minimal validation: ensure file is JSON and has client_email
+          test -s $GITHUB_WORKSPACE/sa-key.json
+          jq -e '.client_email and .private_key_id and .private_key' $GITHUB_WORKSPACE/sa-key.json > /dev/null
+        env:
+          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+
       - name: Verify access to Terraform state bucket
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
           CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE: ${{ steps.auth.outputs.credentials_file_path }}
         run: |
+          echo "Activating service account explicitly with sa-key.json to validate secret formatting..."
+          gcloud auth activate-service-account --key-file=$GITHUB_WORKSPACE/sa-key.json
           echo "Using credentials file: $GOOGLE_APPLICATION_CREDENTIALS"
           echo "gcloud active account(s):"
           gcloud auth list --filter=status:ACTIVE --format='value(account)'
