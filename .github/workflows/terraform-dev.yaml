@@ -25,14 +25,16 @@ jobs:
 
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
+        with:
+          version: '>= 410.0.0'  # Ensures gke-gcloud-auth-plugin is included
+          install_components: 'gke-gcloud-auth-plugin'  # Explicitly install the plugin
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_CREDENTIALS }}
           export_environment_variables: true
-
-
+          create_credentials_file: true
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
@@ -104,11 +106,15 @@ jobs:
 
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
+        with:
+          version: '>= 410.0.0'  # Ensures gke-gcloud-auth-plugin is included
+          install_components: 'gke-gcloud-auth-plugin'  # Explicitly install the plugin
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+          create_credentials_file: true
 
       - name: Make setup script executable
         run: chmod +x setup_k8s_secrets.sh
@@ -118,15 +124,29 @@ jobs:
           PROJECT_ID: zebraan-gcp-zebo-dev
           REGION: asia-south1
           CLUSTER_NAME: dev-gke-cluster
+          USE_GKE_GCLOUD_AUTH_PLUGIN: True  # Required for GKE authentication
         run: |
+          # Update gcloud components
+          gcloud components update -q
+          
+          # Install gke-gcloud-auth-plugin if not already installed
+          if ! command -v gke-gcloud-auth-plugin &> /dev/null; then
+            echo "gke-gcloud-auth-plugin not found, installing..."
+            gcloud components install gke-gcloud-auth-plugin -q
+          fi
+          
           # Configure Docker to use gcloud as a credential helper
           gcloud auth configure-docker asia-south1-docker.pkg.dev --quiet
           
-          # Configure kubectl
+          # Configure kubectl with the auth plugin
           echo "Getting credentials for cluster: ${CLUSTER_NAME}"
           gcloud container clusters get-credentials "${CLUSTER_NAME}" \
             --region "${REGION}" \
             --project "${PROJECT_ID}"
+          
+          # Verify authentication
+          echo "Verifying cluster access..."
+          kubectl get nodes
           
           # Run the setup script
           ./setup_k8s_secrets.sh "$PROJECT_ID" "$REGION"
