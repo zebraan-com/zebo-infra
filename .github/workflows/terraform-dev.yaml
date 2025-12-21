@@ -82,23 +82,20 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
-        run: terraform plan -input=false -var-file=dev.ci.tfvars
-
-      - name: Terraform Apply (main branch)
-        if: github.ref == 'refs/heads/main'
-        run: terraform apply -input=false -auto-approve -var-file=dev.ci.tfvars
-
-      - name: Show Terraform Outputs
-        if: success()
-        run: |
-          terraform output
+        run: terraform plan -input=false -var-file=dev.ci.tfvars -out=tfplan
 
       - name: Upload Terraform Plan Artifact
         uses: actions/upload-artifact@v4
         with:
           name: terraform-plan
-          path: terraform.plan
+          path: tfplan
           if-no-files-found: error
+
+      - name: Terraform Apply (main branch)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          terraform apply -input=false -auto-approve tfplan
+          terraform output
 
   setup-kubernetes:
     name: Setup Kubernetes Resources
