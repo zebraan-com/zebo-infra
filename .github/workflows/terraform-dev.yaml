@@ -87,3 +87,53 @@ jobs:
       - name: Terraform Apply (main branch)
         if: github.ref == 'refs/heads/main'
         run: terraform apply -input=false -auto-approve -var-file=dev.ci.tfvars
+
+      - name: Show Terraform Outputs
+        if: success()
+        run: |
+          terraform output
+
+      - name: Upload Terraform Plan Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: terraform-plan
+          path: terraform.plan
+          if-no-files-found: error
+
+  setup-kubernetes:
+    name: Setup Kubernetes Resources
+    needs: terraform
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Make setup script executable
+        run: chmod +x setup_k8s_secrets.sh
+
+      - name: Run Kubernetes Setup
+        run: |
+          # Export the project ID and region as environment variables
+          export PROJECT_ID=zebraan-gcp-zebo-dev
+          export REGION=asia-south1
+          
+          # Run the setup script
+          ./setup_k8s_secrets.sh "$PROJECT_ID" "$REGION"
+          
+          # Verify the secret was created
+          kubectl get secret artifact-registry-secret
+          
+          # Verify pods are running
+          kubectl get pods --all-namespaces
