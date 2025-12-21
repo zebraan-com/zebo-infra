@@ -10,7 +10,7 @@ commonLabels:
   environment: dev
 
 images:
-  - name: asia-south1-docker.pkg.dev/zebraan-gcp-zebo/zebo-registry/zebo-app
+  - name: asia-south1-docker.pkg.dev/zebraan-gcp-zebo-dev/zebo-registry/zebo-app
     newTag: sha-6c80a9a
 
 patchesStrategicMerge:

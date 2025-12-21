@@ -15,9 +15,9 @@ spec:
     spec:
       containers:
       - name: app
-        image: asia-south1-docker.pkg.dev/zebraan-gcp-zebo/zebo-registry/zebo-app:latest
+        image: asia-south1-docker.pkg.dev/zebraan-gcp-zebo-dev/zebo-registry/zebo-app:latest
         ports:
-        - containerPort: 8080
+        - containerPort: 8000
         env:
         - name: ENVIRONMENT
           value: "base"
@@ -31,12 +31,12 @@ spec:
         livenessProbe:
           httpGet:
             path: /health
-            port: 8080
+            port: 8000
           initialDelaySeconds: 5
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /ready
-            port: 8080
+            port: 8000
           initialDelaySeconds: 5
           periodSeconds: 5

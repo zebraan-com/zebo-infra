@@ -1,7 +1,7 @@
 variable "project_id" {
   description = "GCP Project ID"
   type        = string
-  default     = "zebraan-gcp-zebo"
+  default     = "zebraan-gcp-zebo-dev"
 }
 
 variable "region" {

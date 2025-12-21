@@ -33,7 +33,7 @@ terraform/
 
 ## Prerequisites
 
-- A GCP project with billing enabled (default `project_id` is `zebraan-gcp-zebo`)
+- A GCP project with billing enabled (default `project_id` is `zebraan-gcp-zebo-dev`)
 - IAM permissions to provision infra (Project Owner or equivalent)
 - Terraform >= 1.5.0
 - gcloud CLI and kubectl installed
@@ -59,7 +59,7 @@ All commands below assume `dev`. Replace paths with `prod` to deploy production.
 You can keep using the defaults in `terraform/environments/dev/variables.tf` or override them via a `*.tfvars` file. Create `dev.tfvars` alongside `main.tf` with values for your project:
 
 ```hcl
-project_id         = "zebraan-gcp-zebo"         # your GCP project
+project_id         = "zebraan-gcp-zebo-dev"         # your GCP project
 region             = "asia-south1"
 zone               = "asia-south1-a"
 
@@ -184,7 +184,7 @@ This repo includes two workflows under `.github/workflows/` for managing the `de
 Set these in GitHub → `Settings` → `Secrets and variables` → `Actions` → `Secrets`:
 
 - `GCP_CREDENTIALS`: JSON key for a GCP Service Account that can manage the resources and access the Terraform state bucket.
-- `GCP_PROJECT_ID`: The GCP project ID (e.g., `zebraan-gcp-zebo`).
+- `GCP_PROJECT_ID`: The GCP project ID (e.g., `zebraan-gcp-zebo-dev`).
 - `ZEO_DB_PASSWORD`, `ZEO_OPENAI_KEY`, `ZEO_MF_UTIL_KEY`: Secret Manager values (can be empty; SecretVersion creation is skipped for empty values).
 
 To create the CI service account and key locally, you can use:
@@ -342,3 +342,25 @@ Add these secrets to your GitHub repository (Settings > Secrets > Actions):
 3. **Image Pull Errors**:
    - Ensure the GKE cluster has pull access to the Artifact Registry
    - Check the image pull secret is properly configured
+
+
+
+
+
+## Clean up the Entire Google Cloud Project
+
+Clean up the entire Google Cloud Project
+```bash
+unset GOOGLE_APPLICATION_CREDENTIALS
+unset CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE
+rm /Users/aninda/workspace/git/zebo-infra/key.json
+
+gcloud projects list
+
+gcloud projects delete zebraan-gcp-zebo-dev
+```
+
+Create a new Google Cloud Project
+```bash
+gcloud projects create zebraan-gcp-zebo-dev --name="Zebo AI Wealth manager"
+gcloud projects list

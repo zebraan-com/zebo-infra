@@ -3,11 +3,11 @@ name: Deploy to Dev
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'kubernetes/**'
-      - '.github/workflows/deploy-dev.yaml'
+  # push:
+  #   branches: [main]
+  #   paths:
+  #     - 'kubernetes/**'
+  #     - '.github/workflows/deploy-dev.yaml'
 
 jobs:
   deploy:

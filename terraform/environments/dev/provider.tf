@@ -5,11 +5,11 @@ provider "google" {
   zone    = var.zone
 }
 
-# Uncomment and configure a remote backend if you want remote state
+# Uncomment and configure a remote backend if you want remote state Update the bucket name as ${PROJECT_ID}-terraform-state 
 terraform {
   backend "gcs" {
-    bucket = "zebo-terraform-state"
-    prefix = "terraform/state/zebraan-gcp-zebo"
+    bucket = "zebo-dev-terraform-state"
+    prefix = "terraform/state/zebraan-gcp-zebo-dev"
   }
 
   required_version = ">= 1.5.0"

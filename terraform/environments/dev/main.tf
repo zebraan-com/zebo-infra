@@ -1,5 +1,5 @@
 # Root Terraform Configuration - Main Orchestrator
-# Project: Zebo AI Wealth Manager (zebraan-gcp-zebo)
+# Project: Zebo AI Wealth Manager (zebraan-gcp-zebo-dev)
 
 # Enable required GCP APIs (module is the project folder)
 module "project_apis" {

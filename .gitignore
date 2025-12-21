@@ -29,6 +29,7 @@ override.tf.json
 
 # Sensitive files
 key.json
+key.json.b64
 *.key
 *.pem
 *.crt
