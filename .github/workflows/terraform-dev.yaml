@@ -114,16 +114,26 @@ jobs:
         run: chmod +x setup_k8s_secrets.sh
 
       - name: Run Kubernetes Setup
+        env:
+          PROJECT_ID: zebraan-gcp-zebo-dev
+          REGION: asia-south1
         run: |
-          # Export the project ID and region as environment variables
-          export PROJECT_ID=zebraan-gcp-zebo-dev
-          export REGION=asia-south1
+          # Configure Docker to use gcloud as a credential helper
+          gcloud auth configure-docker asia-south1-docker.pkg.dev --quiet
+          
+          # Configure kubectl
+          gcloud container clusters get-credentials "${PROJECT_ID}-gke" \
+            --region "${REGION}" \
+            --project "${PROJECT_ID}"
           
           # Run the setup script
           ./setup_k8s_secrets.sh "$PROJECT_ID" "$REGION"
           
           # Verify the secret was created
-          kubectl get secret artifact-registry-secret
+          kubectl get secret artifact-registry-secret --namespace=default
+          
+          # Check cluster status
+          kubectl cluster-info
           
           # Verify pods are running
           kubectl get pods --all-namespaces
