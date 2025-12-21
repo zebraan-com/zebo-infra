@@ -117,12 +117,14 @@ jobs:
         env:
           PROJECT_ID: zebraan-gcp-zebo-dev
           REGION: asia-south1
+          CLUSTER_NAME: dev-gke-cluster
         run: |
           # Configure Docker to use gcloud as a credential helper
           gcloud auth configure-docker asia-south1-docker.pkg.dev --quiet
           
           # Configure kubectl
-          gcloud container clusters get-credentials "${PROJECT_ID}-gke" \
+          echo "Getting credentials for cluster: ${CLUSTER_NAME}"
+          gcloud container clusters get-credentials "${CLUSTER_NAME}" \
             --region "${REGION}" \
             --project "${PROJECT_ID}"
           
