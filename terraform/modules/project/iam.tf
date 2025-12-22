@@ -47,6 +47,18 @@ resource "google_project_iam_member" "artifact_registry_writer" {
   ]
 }
 
+# Allow artifact registry read for node pool/service account to pull images
+resource "google_project_iam_member" "artifact_registry_reader" {
+  project = var.project_id
+  role    = "roles/artifactregistry.reader"
+  member  = "serviceAccount:${google_service_account.gke_node_pool_sa.email}"
+
+  depends_on = [
+    google_project_service.enabled["iam.googleapis.com"],
+    google_service_account.gke_node_pool_sa
+  ]
+}
+
 output "gke_node_pool_sa_email" {
   value = google_service_account.gke_node_pool_sa.email
 }
