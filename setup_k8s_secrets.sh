@@ -48,7 +48,7 @@ echo "Configuring kubectl for project: ${PROJECT_ID}, region: ${REGION}"
 if ! gcloud container clusters get-credentials "${PROJECT_ID}-gke" \
   --region "${REGION}" \
   --project "${PROJECT_ID}" 2>/dev/null; then
-    error_exitor "Failed to get cluster credentials. Make sure the cluster exists and you have access to it."
+    error_exit "Failed to get cluster credentials. Make sure the cluster exists and you have access to it."
 fi
 
 # Check if the cluster is running
