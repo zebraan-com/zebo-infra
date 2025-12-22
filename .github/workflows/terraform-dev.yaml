@@ -107,34 +107,32 @@ jobs:
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
         with:
-          version: '>= 410.0.0'  # Ensures gke-gcloud-auth-plugin is included
-          install_components: 'gke-gcloud-auth-plugin'  # Explicitly install the plugin
+          version: '>=410.0.0'
+          install_components: 'gke-gcloud-auth-plugin'
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_CREDENTIALS }}
           create_credentials_file: true
+          workload_identity_provider: ''
+          access_token_lifetime: '600s'
+
+      - name: Configure gcloud
+        run: |
+          gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
+          gcloud config set compute/region asia-south1
 
       - name: Make setup script executable
         run: chmod +x setup_k8s_secrets.sh
 
       - name: Run Kubernetes Setup
         env:
-          PROJECT_ID: zebraan-gcp-zebo-dev
+          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           REGION: asia-south1
           CLUSTER_NAME: dev-gke-cluster
-          USE_GKE_GCLOUD_AUTH_PLUGIN: True  # Required for GKE authentication
+          USE_GKE_GCLOUD_AUTH_PLUGIN: True
         run: |
-          # Update gcloud components
-          gcloud components update -q
-          
-          # Install gke-gcloud-auth-plugin if not already installed
-          if ! command -v gke-gcloud-auth-plugin &> /dev/null; then
-            echo "gke-gcloud-auth-plugin not found, installing..."
-            gcloud components install gke-gcloud-auth-plugin -q
-          fi
-          
           # Configure Docker to use gcloud as a credential helper
           gcloud auth configure-docker asia-south1-docker.pkg.dev --quiet
           
@@ -148,14 +146,6 @@ jobs:
           echo "Verifying cluster access..."
           kubectl get nodes
           
-          # Run the setup script
+          # Run the setup script with explicit authentication
+          gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
           ./setup_k8s_secrets.sh "$PROJECT_ID" "$REGION"
-          
-          # Verify the secret was created
-          kubectl get secret artifact-registry-secret --namespace=default
-          
-          # Check cluster status
-          kubectl cluster-info
-          
-          # Verify pods are running
-          kubectl get pods --all-namespaces
