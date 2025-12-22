@@ -45,14 +45,14 @@ fi
 
 # Configure kubectl to use the new cluster
 echo "Configuring kubectl for project: ${PROJECT_ID}, region: ${REGION}"
-if ! gcloud container clusters get-credentials "${PROJECT_ID}-gke" \
+if ! gcloud container clusters get-credentials "dev-gke-cluster" \
   --region "${REGION}" \
   --project "${PROJECT_ID}" 2>/dev/null; then
     error_exit "Failed to get cluster credentials. Make sure the cluster exists and you have access to it."
 fi
 
 # Check if the cluster is running
-CLUSTER_STATUS=$(gcloud container clusters describe "${PROJECT_ID}-gke" \
+CLUSTER_STATUS=$(gcloud container clusters describe "dev-gke-cluster" \
   --region "${REGION}" \
   --project "${PROJECT_ID}" \
   --format='value(status)' 2>/dev/null || echo "UNKNOWN")
