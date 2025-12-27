@@ -30,6 +30,9 @@ module "gke_cluster" {
   project_id   = var.project_id
   region       = var.region
   cluster_name = "${var.environment}-gke-cluster"
+  
+  # Service account for node pool
+  gke_node_pool_sa_email = "${var.project_number}-compute@developer.gserviceaccount.com"
 
   # Use custom VPC/subnet so the module can create secondary ranges
   network_name    = "zebo-gke-net"

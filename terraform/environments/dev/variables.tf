@@ -4,6 +4,12 @@ variable "project_id" {
   default     = "zebraan-gcp-zebo-dev"
 }
 
+variable "project_number" {
+  description = "GCP Project Number"
+  type        = string
+  default     = ""  # This should be set in terraform.tfvars or via environment variable
+}
+
 variable "region" {
   description = "GCP Region"
   type        = string
