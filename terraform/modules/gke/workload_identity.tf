@@ -14,7 +14,7 @@ resource "kubernetes_service_account_v1" "default" {
 }
 
 # Create a Kubernetes ConfigMap to configure the default service account
-resource "kubernetes_config_map" "workload_identity_config" {
+resource "kubernetes_config_map_v1" "workload_identity_config" {
   metadata {
     name      = "workload-identity-config"
     namespace = "default"
