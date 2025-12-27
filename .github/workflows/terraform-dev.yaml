@@ -46,7 +46,6 @@ jobs:
         run: |
           cat > dev.ci.tfvars <<EOF
           project_id              = "${PROJECT_ID}"
-          project_number          = "${PROJECT_NUMBER}"
           region                  = "${REGION}"
           registry_id             = "${REGISTRY_ID}"
           node_machine_type       = "${NODE_MACHINE_TYPE}"

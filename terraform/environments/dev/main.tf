@@ -23,9 +23,11 @@ module "secret_manager" {
   secrets    = var.secrets
 }
 
-# Get the default compute service account
-data "google_compute_default_service_account" "default" {
-  project = var.project_id
+# Create a dedicated service account for GKE nodes
+resource "google_service_account" "gke_node_sa" {
+  account_id   = "gke-node-sa"
+  display_name = "GKE Node Service Account"
+  project      = var.project_id
 }
 
 # GKE Cluster Deployment
@@ -37,7 +39,7 @@ module "gke_cluster" {
   cluster_name = "${var.environment}-gke-cluster"
 
   # Service account for node pool
-  gke_node_pool_sa_email = data.google_compute_default_service_account.default.email
+  gke_node_pool_sa_email = google_service_account.gke_node_sa.email
 
   # Use custom VPC/subnet so the module can create secondary ranges
   network_name    = "zebo-gke-net"

@@ -1,5 +1,5 @@
 # Create a Kubernetes service account in the default namespace
-resource "kubernetes_service_account" "default" {
+resource "kubernetes_service_account_v1" "default" {
   metadata {
     name      = "default"
     namespace = "default"
