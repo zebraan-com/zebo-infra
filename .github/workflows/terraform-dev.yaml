@@ -46,6 +46,7 @@ jobs:
         run: |
           cat > dev.ci.tfvars <<EOF
           project_id              = "${PROJECT_ID}"
+          project_number          = "${PROJECT_NUMBER}"
           region                  = "${REGION}"
           registry_id             = "${REGISTRY_ID}"
           node_machine_type       = "${NODE_MACHINE_TYPE}"
@@ -62,6 +63,7 @@ jobs:
           EOF
         env:
           PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          PROJECT_NUMBER: ${{ secrets.GCP_PROJECT_NUMBER }}
           REGION: ${{ vars.GCP_REGION || 'asia-south1' }}
           REGISTRY_ID: ${{ vars.ARTIFACT_REGISTRY_ID || 'zebo-registry' }}
           NODE_MACHINE_TYPE: ${{ vars.NODE_MACHINE_TYPE || 'e2-small' }}

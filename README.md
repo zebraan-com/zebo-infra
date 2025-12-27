@@ -364,3 +364,10 @@ Create a new Google Cloud Project
 ```bash
 gcloud projects create zebraan-gcp-zebo-dev --name="Zebo AI Wealth manager"
 gcloud projects list
+
+
+
+## find the project number
+```bash
+gcloud projects describe $(gcloud config get-value project) --format="value(projectNumber)"
+```
