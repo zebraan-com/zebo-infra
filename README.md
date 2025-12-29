@@ -120,6 +120,45 @@ kubectl config get-contexts
 
 # List nodes in the cluster
 kubectl get nodes
+
+# List pods in the cluster
+kubectl get pods --all-namespaces
+
+# List services in the cluster
+kubectl get services --all-namespaces
+
+# List deployments in the cluster
+kubectl get deployments --all-namespaces
+
+# List configmaps in the cluster
+kubectl get configmaps --all-namespaces
+
+# List secrets in the cluster
+kubectl get secrets --all-namespaces
+
+# describe a pod
+kubectl describe pod <pod_name> -n <namespace>
+ex: kubectl describe pod zebo-app-dev-775ddf895-tbt8b -n zebo-dev
+
+# describe a deployment
+kubectl describe deployment <deployment_name> -n <namespace>
+
+# describe a configmap
+kubectl describe configmap <configmap_name> -n <namespace>
+
+# describe a secret
+kubectl describe secret <secret_name> -n <namespace>
+
+# describe a service
+kubectl describe service <service_name> -n <namespace>
+
+# logs of a pod
+kubectl logs <pod_name> -n <namespace>
+ex: kubectl logs zebo-app-dev-775ddf895-tbt8b -n zebo-dev
+
+# logs of a deployment
+kubectl logs <deployment_name> -n <namespace>
+ex: kubectl logs zebo-app-dev -n zebo-dev
 ```
 
 ## Build and push images to Artifact Registry
