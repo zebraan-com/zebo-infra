@@ -1,7 +1,7 @@
 # Create a Kubernetes service account in the default namespace
-resource "kubernetes_service_account_v1" "default" {
+resource "kubernetes_service_account_v1" "gke_workload_identity" {
   metadata {
-    name      = "default"
+    name      = "gke-workload-identity"
     namespace = "default"
     annotations = {
       "iam.gke.io/gcp-service-account" = var.gke_node_pool_sa_email

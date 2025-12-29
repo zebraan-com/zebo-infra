@@ -16,12 +16,9 @@ provider "kubernetes" {
   token                  = data.google_client_config.default.access_token
   cluster_ca_certificate = base64decode(google_container_cluster.primary.master_auth[0].cluster_ca_certificate)
   
-  # Load config with a slight delay to ensure the cluster is fully created
-  load_config_file = false
-  
-  # This will prevent the provider from trying to use the config file
-  # which might not be available in the CI/CD environment
-  config_path = null
+  # Explicitly disable the use of kubeconfig file
+  # as we're providing all configuration directly
+  config_path = ""
 }
 
 # Add explicit dependency on the GKE cluster
