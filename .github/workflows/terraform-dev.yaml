@@ -152,11 +152,11 @@ jobs:
 
       - name: Run Setup Script
         run: |
-          chmod +x ../../setup_k8s_secrets.sh
+          chmod +x ./setup_k8s_secrets.sh
           if [ "${{ github.event.inputs.deploy_to_prod }}" = "true" ]; then
             echo " Deploying to production environment"
-            ../../setup_k8s_secrets.sh --prod
+            ./setup_k8s_secrets.sh --prod
           else
             echo " Deploying to development environment"
-            ../../setup_k8s_secrets.sh
+            ./setup_k8s_secrets.sh
           fi
