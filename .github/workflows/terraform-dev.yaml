@@ -130,21 +130,13 @@ jobs:
           gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
           gcloud config set compute/region asia-south1
 
-      - name: Run Setup Script
-        run: |
-          chmod +x ../../setup_k8s_secrets.sh
-          if [ "${{ github.event.inputs.deploy_to_prod }}" = "true" ]; then
-            echo " Deploying to production environment"
-            ../../setup_k8s_secrets.sh --prod
-          else
-            echo " Deploying to development environment"
-            ../../setup_k8s_secrets.sh
-          fi
+      - name: Configure Docker and kubectl
         env:
           PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           REGION: asia-south1
           CLUSTER_NAME: dev-gke-cluster
-          USE_GKE_GCLOUD_AUTH_PLUGIN: True
+          USE_GKE_GCLOUD_AUTH_PLUGIN: 'True'
+        run: |
           # Configure Docker to use gcloud as a credential helper
           gcloud auth configure-docker asia-south1-docker.pkg.dev --quiet
           
@@ -157,7 +149,14 @@ jobs:
           # Verify authentication
           echo "Verifying cluster access..."
           kubectl get nodes
-          
-          # Run the setup script with explicit authentication
-          gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
-          ./setup_k8s_secrets.sh "$PROJECT_ID" "$REGION"
+
+      - name: Run Setup Script
+        run: |
+          chmod +x ../../setup_k8s_secrets.sh
+          if [ "${{ github.event.inputs.deploy_to_prod }}" = "true" ]; then
+            echo " Deploying to production environment"
+            ../../setup_k8s_secrets.sh --prod
+          else
+            echo " Deploying to development environment"
+            ../../setup_k8s_secrets.sh
+          fi
