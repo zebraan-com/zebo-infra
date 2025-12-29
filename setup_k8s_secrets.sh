@@ -89,14 +89,23 @@ else
     echo "✅ Default service account is available"
 fi
 
-# Apply Kubernetes manifests
-echo "Applying Kubernetes manifests from kubernetes/overlays/dev..."
-if [ ! -d "kubernetes/overlays/dev" ]; then
-    error_exit "Kubernetes manifests directory not found at kubernetes/overlays/dev"
+# Determine environment
+ENV_OVERLAY="dev"
+if [ "$1" == "--prod" ] || [ "$1" == "-p" ]; then
+    ENV_OVERLAY="prod"
+    echo "🔵 Production deployment selected"
+else
+    echo "🔵 Development deployment selected"
 fi
 
-if ! kubectl apply -k kubernetes/overlays/dev; then
-    error_exit "Failed to apply Kubernetes manifests"
+# Apply Kubernetes manifests
+echo "Applying Kubernetes manifests from kubernetes/overlays/$ENV_OVERLAY..."
+if [ ! -d "kubernetes/overlays/$ENV_OVERLAY" ]; then
+    error_exit "Kubernetes manifests directory not found at kubernetes/overlays/$ENV_OVERLAY"
+fi
+
+if ! kubectl apply -k "kubernetes/overlays/$ENV_OVERLAY"; then
+    error_exit "Failed to apply Kubernetes manifests for $ENV_OVERLAY environment"
 fi
 
 echo "✅ Kubernetes setup completed successfully!"
