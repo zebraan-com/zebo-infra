@@ -152,13 +152,14 @@ jobs:
 
       - name: Run Setup Script
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/service-account.json
           CLOUDSDK_CORE_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
         run: |
-          # Activate service account with explicit scopes
-          gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS \
-            --project=${{ secrets.GCP_PROJECT_ID }} \
-            --verbosity=debug
+          # Write the service account key to a file
+          echo '${{ secrets.GCP_CREDENTIALS }}' > $GOOGLE_APPLICATION_CREDENTIALS
+          
+          # Authenticate using the service account key file
+          gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
           
           # Set the project
           gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
@@ -166,9 +167,6 @@ jobs:
           # Verify authentication
           echo " Active account: $(gcloud config get-value account)"
           echo " Project set to: $(gcloud config get-value project)"
-          
-          # List active configuration for debugging
-          gcloud config list
           
           # Make script executable and run it with project ID and region as parameters
           chmod +x ./setup_k8s_secrets.sh
@@ -179,3 +177,6 @@ jobs:
             echo " Deploying to development environment"
             ./setup_k8s_secrets.sh ${{ secrets.GCP_PROJECT_ID }} asia-south1
           fi
+          
+          # Clean up the service account key file
+          rm -f $GOOGLE_APPLICATION_CREDENTIALS
