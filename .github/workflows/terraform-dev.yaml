@@ -153,19 +153,29 @@ jobs:
       - name: Run Setup Script
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+          CLOUDSDK_CORE_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
         run: |
-          # Activate service account
-          gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
+          # Activate service account with explicit scopes
+          gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS \
+            --project=${{ secrets.GCP_PROJECT_ID }} \
+            --verbosity=debug
           
           # Set the project
           gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
           
-          # Make script executable and run it
+          # Verify authentication
+          echo " Active account: $(gcloud config get-value account)"
+          echo " Project set to: $(gcloud config get-value project)"
+          
+          # List active configuration for debugging
+          gcloud config list
+          
+          # Make script executable and run it with project ID and region as parameters
           chmod +x ./setup_k8s_secrets.sh
           if [ "${{ github.event.inputs.deploy_to_prod }}" = "true" ]; then
             echo " Deploying to production environment"
-            ./setup_k8s_secrets.sh --prod
+            ./setup_k8s_secrets.sh ${{ secrets.GCP_PROJECT_ID }} asia-south1 --prod
           else
             echo " Deploying to development environment"
-            ./setup_k8s_secrets.sh
+            ./setup_k8s_secrets.sh ${{ secrets.GCP_PROJECT_ID }} asia-south1
           fi
