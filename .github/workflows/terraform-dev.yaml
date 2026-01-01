@@ -151,7 +151,16 @@ jobs:
           kubectl get nodes
 
       - name: Run Setup Script
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
         run: |
+          # Activate service account
+          gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
+          
+          # Set the project
+          gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
+          
+          # Make script executable and run it
           chmod +x ./setup_k8s_secrets.sh
           if [ "${{ github.event.inputs.deploy_to_prod }}" = "true" ]; then
             echo " Deploying to production environment"
