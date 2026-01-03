@@ -5,9 +5,6 @@ module "artifact_registry_secret" {
   service_account_key_path = "${path.module}/../../service-account-key.json"
   namespace                = "default"
 
-  # Ensure the Kubernetes provider is properly configured before creating this resource
-  depends_on = [
-    # Add any dependencies like your GKE cluster here
-    google_container_cluster.primary,
-  ]
+  # The Kubernetes provider configuration will be handled by the module
+  # No need for explicit depends_on as the module will handle its own dependencies
 }
