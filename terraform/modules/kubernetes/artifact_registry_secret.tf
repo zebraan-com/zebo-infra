@@ -10,7 +10,7 @@ resource "kubernetes_secret" "artifact_registry_secret" {
     ".dockerconfigjson" = jsonencode({
       auths = {
         "${var.artifact_registry_host}" = {
-          "auth" = base64encode("_json_key:${file(var.service_account_key_path)}")
+          "auth" = base64encode("_json_key:${var.service_account_key}")
         }
       }
     })
