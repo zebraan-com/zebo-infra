@@ -37,19 +37,3 @@ resource "kubernetes_service_account" "default" {
   automount_service_account_token = false
 }
 
-# Variables
-variable "artifact_registry_host" {
-  description = "The hostname of the Artifact Registry (e.g., asia-south1-docker.pkg.dev)"
-  type        = string
-}
-
-variable "service_account_key_path" {
-  description = "Path to the service account key file"
-  type        = string
-}
-
-variable "namespace" {
-  description = "The namespace where to create the secret"
-  type        = string
-  default     = "default"
-}
