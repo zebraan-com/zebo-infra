@@ -29,6 +29,12 @@ variable "cluster_name" {
   default     = "zebo-gke-cluster"
 }
 
+variable "gke_node_pool_sa_email" {
+  description = "Email of the GKE node pool service account"
+  type        = string
+  default     = "zebo-gke-nodes@zebraan-gcp-zebo-dev.iam.gserviceaccount.com"
+}
+
 variable "network_name" {
   description = "VPC network name (default uses 'default')"
   type        = string
