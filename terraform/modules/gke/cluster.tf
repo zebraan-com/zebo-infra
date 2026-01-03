@@ -10,7 +10,7 @@ resource "google_project_service" "container" {
 # Only create network resources if not using default
 resource "google_compute_network" "gke_network" {
   count = var.network_name == "default" ? 0 : 1
-  
+
   name                    = var.network_name
   project                 = var.project_id
   auto_create_subnetworks = false
@@ -19,18 +19,18 @@ resource "google_compute_network" "gke_network" {
 # Only create subnetwork if not using default
 resource "google_compute_subnetwork" "gke_subnet" {
   count = var.subnetwork_name == "default" ? 0 : 1
-  
+
   name          = var.subnetwork_name
-  ip_cidr_range = cidrsubnet("10.0.0.0/8", 8, 0)  # Creates a /24 subnet
+  ip_cidr_range = cidrsubnet("10.0.0.0/8", 8, 0) # Creates a /24 subnet
   region        = var.region
   project       = var.project_id
   network       = var.network_name == "default" ? "default" : google_compute_network.gke_network[0].id
-  
+
   secondary_ip_range {
     range_name    = "pods"
     ip_cidr_range = var.ip_range_pods
   }
-  
+
   secondary_ip_range {
     range_name    = "services"
     ip_cidr_range = var.ip_range_services
@@ -116,11 +116,11 @@ resource "google_container_node_pool" "primary_nodes" {
   }
 
   node_config {
-    machine_type = var.node_machine_type
-    disk_size_gb = 100
-    disk_type    = "pd-standard"
+    machine_type    = var.node_machine_type
+    disk_size_gb    = 100
+    disk_type       = "pd-standard"
     service_account = var.gke_node_pool_sa_email
-    
+
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform"
     ]

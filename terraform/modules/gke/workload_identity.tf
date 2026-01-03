@@ -7,7 +7,7 @@ resource "kubernetes_service_account_v1" "gke_workload_identity" {
       "iam.gke.io/gcp-service-account" = var.gke_node_pool_sa_email
     }
   }
-  
+
   depends_on = [
     google_container_cluster.primary
   ]
@@ -23,7 +23,7 @@ resource "kubernetes_config_map_v1" "workload_identity_config" {
   data = {
     "cloud" = "gcp"
   }
-  
+
   depends_on = [
     google_container_cluster.primary
   ]
