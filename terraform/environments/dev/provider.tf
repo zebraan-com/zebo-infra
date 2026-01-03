@@ -7,7 +7,7 @@ provider "google" {
 
 # Get GKE cluster information
 data "google_container_cluster" "primary" {
-  name     = "gke-cluster"  # Using a more generic name that might match your cluster
+  name     = "gke-cluster" # Using a more generic name that might match your cluster
   location = var.region
 }
 
