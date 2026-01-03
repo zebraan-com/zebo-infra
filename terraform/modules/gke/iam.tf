@@ -2,7 +2,7 @@
 resource "google_project_iam_member" "gke_artifact_registry_reader" {
   project = var.project_id
   role    = "roles/artifactregistry.reader"
-  member  = "serviceAccount:${var.project_id}.svc.id.goog[default/gke-workload-identity]"
+  member  = "serviceAccount:${var.gke_node_pool_sa_email}"
 
   depends_on = [
     google_container_cluster.primary
