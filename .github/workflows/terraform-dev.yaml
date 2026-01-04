@@ -99,84 +99,84 @@ jobs:
           terraform apply -input=false -auto-approve -var-file=dev.ci.tfvars
           terraform output
 
-  setup-kubernetes:
-    name: Setup Kubernetes Resources
-    needs: terraform
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
+  # setup-kubernetes:
+  #   name: Setup Kubernetes Resources
+  #   needs: terraform
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: read
+  #     id-token: write
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
 
-      - name: Set up Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          version: '>=410.0.0'
-          install_components: 'gke-gcloud-auth-plugin'
+  #     - name: Set up Google Cloud SDK
+  #       uses: google-github-actions/setup-gcloud@v2
+  #       with:
+  #         version: '>=410.0.0'
+  #         install_components: 'gke-gcloud-auth-plugin'
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
-          create_credentials_file: true
-          workload_identity_provider: ''
-          access_token_lifetime: '600s'
+  #     - name: Authenticate to Google Cloud
+  #       uses: google-github-actions/auth@v2
+  #       with:
+  #         credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+  #         create_credentials_file: true
+  #         workload_identity_provider: ''
+  #         access_token_lifetime: '600s'
 
-      - name: Configure gcloud
-        run: |
-          gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
-          gcloud config set compute/region asia-south1
+  #     - name: Configure gcloud
+  #       run: |
+  #         gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
+  #         gcloud config set compute/region asia-south1
 
-      - name: Configure Docker and kubectl
-        env:
-          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-          REGION: asia-south1
-          CLUSTER_NAME: dev-gke-cluster
-          USE_GKE_GCLOUD_AUTH_PLUGIN: 'True'
-        run: |
-          # Configure Docker to use gcloud as a credential helper
-          gcloud auth configure-docker asia-south1-docker.pkg.dev --quiet
+  #     - name: Configure Docker and kubectl
+  #       env:
+  #         PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  #         REGION: asia-south1
+  #         CLUSTER_NAME: dev-gke-cluster
+  #         USE_GKE_GCLOUD_AUTH_PLUGIN: 'True'
+  #       run: |
+  #         # Configure Docker to use gcloud as a credential helper
+  #         gcloud auth configure-docker asia-south1-docker.pkg.dev --quiet
           
-          # Configure kubectl with the auth plugin
-          echo "Getting credentials for cluster: ${CLUSTER_NAME}"
-          gcloud container clusters get-credentials "${CLUSTER_NAME}" \
-            --region "${REGION}" \
-            --project "${PROJECT_ID}"
+  #         # Configure kubectl with the auth plugin
+  #         echo "Getting credentials for cluster: ${CLUSTER_NAME}"
+  #         gcloud container clusters get-credentials "${CLUSTER_NAME}" \
+  #           --region "${REGION}" \
+  #           --project "${PROJECT_ID}"
           
-          # Verify authentication
-          echo "Verifying cluster access..."
-          kubectl get nodes
+  #         # Verify authentication
+  #         echo "Verifying cluster access..."
+  #         kubectl get nodes
 
-      - name: Run Setup Script
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: /tmp/service-account.json
-          CLOUDSDK_CORE_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
-        run: |
-          # Write the service account key to a file
-          echo '${{ secrets.GCP_CREDENTIALS }}' > $GOOGLE_APPLICATION_CREDENTIALS
+  #     - name: Run Setup Script
+  #       env:
+  #         GOOGLE_APPLICATION_CREDENTIALS: /tmp/service-account.json
+  #         CLOUDSDK_CORE_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
+  #       run: |
+  #         # Write the service account key to a file
+  #         echo '${{ secrets.GCP_CREDENTIALS }}' > $GOOGLE_APPLICATION_CREDENTIALS
           
-          # Authenticate using the service account key file
-          gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
+  #         # Authenticate using the service account key file
+  #         gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
           
-          # Set the project
-          gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
+  #         # Set the project
+  #         gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
           
-          # Verify authentication
-          echo " Active account: $(gcloud config get-value account)"
-          echo " Project set to: $(gcloud config get-value project)"
+  #         # Verify authentication
+  #         echo " Active account: $(gcloud config get-value account)"
+  #         echo " Project set to: $(gcloud config get-value project)"
           
-          # Make script executable and run it with project ID and region as parameters
-          chmod +x ./setup_k8s_secrets.sh
-          if [ "${{ github.event.inputs.deploy_to_prod }}" = "true" ]; then
-            echo " Deploying to production environment"
-            ./setup_k8s_secrets.sh ${{ secrets.GCP_PROJECT_ID }} asia-south1 --prod
-          else
-            echo " Deploying to development environment"
-            ./setup_k8s_secrets.sh ${{ secrets.GCP_PROJECT_ID }} asia-south1
-          fi
+  #         # Make script executable and run it with project ID and region as parameters
+  #         chmod +x ./setup_k8s_secrets.sh
+  #         if [ "${{ github.event.inputs.deploy_to_prod }}" = "true" ]; then
+  #           echo " Deploying to production environment"
+  #           ./setup_k8s_secrets.sh ${{ secrets.GCP_PROJECT_ID }} asia-south1 --prod
+  #         else
+  #           echo " Deploying to development environment"
+  #           ./setup_k8s_secrets.sh ${{ secrets.GCP_PROJECT_ID }} asia-south1
+  #         fi
           
-          # Clean up the service account key file
-          rm -f $GOOGLE_APPLICATION_CREDENTIALS
+  #         # Clean up the service account key file
+  #         rm -f $GOOGLE_APPLICATION_CREDENTIALS
