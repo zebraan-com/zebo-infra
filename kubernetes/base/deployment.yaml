@@ -13,8 +13,8 @@ spec:
       labels:
         app: zebo
     spec:
-      imagePullSecrets:
-      - name: artifact-registry-secret
+      # imagePullSecrets:
+      # - name: artifact-registry-secret
       containers:
       - name: app
         image: asia-south1-docker.pkg.dev/zebraan-gcp-zebo-dev/zebo-registry/zebo-app:latest
@@ -25,20 +25,22 @@ spec:
           value: "base"
         resources:
           requests:
-            cpu: "50m"
-            memory: "64Mi"
+            cpu: "250m"
+            memory: "512Mi"
           limits:
-            cpu: "200m"
-            memory: "256Mi"
+            cpu: "500m"
+            memory: "1Gi"
         livenessProbe:
           httpGet:
             path: /health
             port: 8000
-          initialDelaySeconds: 5
+          initialDelaySeconds: 60
           periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 5
         readinessProbe:
           httpGet:
             path: /ready
             port: 8000
-          initialDelaySeconds: 5
-          periodSeconds: 5
+          initialDelaySeconds: 30
+          periodSeconds: 10
