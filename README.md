@@ -246,7 +246,7 @@ Set these in GitHub → `Settings` → `Secrets and variables` → `Actions` →
 
 - `GCP_REGION` (e.g., `asia-south1`)
 - `ARTIFACT_REGISTRY_ID` (e.g., `zebo-registry`)
-- `NODE_MACHINE_TYPE` (e.g., `e2-small`)
+- `NODE_MACHINE_TYPE` (e.g., `e2-medium)
 - `MIN_NODES` (e.g., `0`)
 - `MAX_NODES` (e.g., `1`)
 - `GKE_DELETION_PROTECTION` (default `true`; set to `false` only for destroy runs)

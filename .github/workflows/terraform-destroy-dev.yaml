@@ -60,7 +60,7 @@ jobs:
           PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           REGION: ${{ vars.GCP_REGION || 'asia-south1' }}
           REGISTRY_ID: ${{ vars.ARTIFACT_REGISTRY_ID || 'zebo-registry' }}
-          NODE_MACHINE_TYPE: ${{ vars.NODE_MACHINE_TYPE || 'e2-small' }}
+          NODE_MACHINE_TYPE: ${{ vars.NODE_MACHINE_TYPE || 'e2-medium' }}
           MIN_NODES: ${{ vars.MIN_NODES || '0' }}
           MAX_NODES: ${{ vars.MAX_NODES || '1' }}
           # Even if secrets are empty, versions will be skipped by module logic

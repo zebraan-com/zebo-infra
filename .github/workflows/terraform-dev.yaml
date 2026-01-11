@@ -71,7 +71,7 @@ jobs:
           PROJECT_NUMBER: ${{ secrets.GCP_PROJECT_NUMBER }}
           REGION: ${{ vars.GCP_REGION || 'asia-south1' }}
           REGISTRY_ID: ${{ vars.ARTIFACT_REGISTRY_ID || 'zebo-registry' }}
-          NODE_MACHINE_TYPE: ${{ vars.NODE_MACHINE_TYPE || 'e2-small' }}
+          NODE_MACHINE_TYPE: ${{ vars.NODE_MACHINE_TYPE || 'e2-medium' }}
           MIN_NODES: ${{ vars.MIN_NODES || '0' }}
           MAX_NODES: ${{ vars.MAX_NODES || '1' }}
           # Flip to 'false' on a destroy workflow; keep true on main applies

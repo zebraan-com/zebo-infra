@@ -62,7 +62,7 @@ variable "ip_range_services" {
 variable "node_machine_type" {
   description = "Machine type for GKE nodes"
   type        = string
-  default     = "e2-small"
+  default     = "e2-medium"
 }
 
 variable "min_nodes" {
