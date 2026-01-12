@@ -1,12 +1,10 @@
-# kubernetes/base/service.yaml
+# kubernetes/overlays/dev/patch-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
   name: zebo-service
 spec:
-  type: ClusterIP
-  selector:
-    app: zebo
+  type: LoadBalancer
   ports:
   - protocol: TCP
     port: 80
