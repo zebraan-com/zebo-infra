@@ -98,5 +98,5 @@ variable "secrets" {
 variable "terraform_service_account_email" {
   description = "Email of the service account used by Terraform (e.g., from GitHub Actions). If provided, it will be granted permission to impersonate the GKE node service account."
   type        = string
-  default     = ""  # Empty by default, will auto-detect if not provided
+  default     = "" # Empty by default, will auto-detect if not provided
 }

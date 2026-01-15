@@ -37,7 +37,7 @@ resource "google_project_iam_member" "gke_node_sa_roles" {
     "roles/monitoring.metricWriter",
     "roles/monitoring.viewer",
   ])
-  
+
   project = var.project_id
   role    = each.key
   member  = "serviceAccount:${google_service_account.gke_node_sa.email}"
@@ -53,11 +53,11 @@ locals {
 # This prevents the "user does not have access to service account" error
 resource "google_service_account_iam_member" "terraform_can_use_gke_node_sa" {
   count = local.has_terraform_sa ? 1 : 0
-  
+
   service_account_id = google_service_account.gke_node_sa.name
   role               = "roles/iam.serviceAccountUser"
   member             = "serviceAccount:${var.terraform_service_account_email}"
-  
+
   depends_on = [google_service_account.gke_node_sa]
 }
 
