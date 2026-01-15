@@ -59,6 +59,9 @@ jobs:
           max_nodes               = ${MAX_NODES}
           gke_deletion_protection = ${GKE_DELETION_PROTECTION}
 
+          # Terraform service account email (optional, auto-detects if not set)
+          terraform_service_account_email = "${TERRAFORM_SA_EMAIL}"
+
           # Secrets used by the secret_manager module
           secrets = {
             ZEO_DB_PASSWORD = "${ZEO_DB_PASSWORD}"
@@ -76,6 +79,8 @@ jobs:
           MAX_NODES: ${{ vars.MAX_NODES || '1' }}
           # Flip to 'false' on a destroy workflow; keep true on main applies
           GKE_DELETION_PROTECTION: ${{ vars.GKE_DELETION_PROTECTION || 'true' }}
+          # Terraform SA email (add this to GitHub variables)
+          TERRAFORM_SA_EMAIL: ${{ vars.TERRAFORM_SERVICE_ACCOUNT_EMAIL || 'terraform-ci@zebraan-gcp-zebo-dev.iam.gserviceaccount.com' }}
           # Sensitive secrets
           ZEO_DB_PASSWORD: ${{ secrets.ZEO_DB_PASSWORD }}
           ZEO_OPENAI_KEY: ${{ secrets.ZEO_OPENAI_KEY }}
