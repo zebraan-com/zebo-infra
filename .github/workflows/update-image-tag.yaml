@@ -19,23 +19,42 @@ jobs:
         run: |
           git config --global user.name 'GitHub Actions'
           git config --global user.email 'actions@github.com'
-
-      - name: Update kustomization newTag
+      
+      - name: Update helm chart values-dev.yaml tag
         env:
           NEW_TAG: ${{ github.event.client_payload.tag }}
         run: |
           echo "Updating image tag to: ${NEW_TAG}"
-          for file in kubernetes/overlays/*/kustomization.yaml; do
+          for file in charts/zebo-app/values-dev.yaml; do
             if [ -f "$file" ]; then
               echo "Updating $file"
-              sed -i "s|newTag: .*|newTag: ${NEW_TAG}|" "$file"
+              sed -i "s|tag: .*|tag: ${NEW_TAG}|" "$file"
             fi
           done
 
           if ! git diff --quiet; then
-            git add kubernetes/overlays/
+            git add charts/zebo-app/values-dev.yaml
             git commit -m "ci: update image tag to ${NEW_TAG}"
             git push
           else
             echo "No changes to commit"
           fi
+      # - name: Update kustomization newTag
+      #   env:
+      #     NEW_TAG: ${{ github.event.client_payload.tag }}
+      #   run: |
+      #     echo "Updating image tag to: ${NEW_TAG}"
+      #     for file in kubernetes/overlays/*/kustomization.yaml; do
+      #       if [ -f "$file" ]; then
+      #         echo "Updating $file"
+      #         sed -i "s|newTag: .*|newTag: ${NEW_TAG}|" "$file"
+      #       fi
+      #     done
+
+      #     if ! git diff --quiet; then
+      #       git add kubernetes/overlays/
+      #       git commit -m "ci: update image tag to ${NEW_TAG}"
+      #       git push
+      #     else
+      #       echo "No changes to commit"
+      #     fi

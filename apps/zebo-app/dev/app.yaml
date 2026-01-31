@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: zebo-app
+spec:
+  source:
+    repoURL: https://github.com/zebraan-com/zebo-infra
+    targetRevision: main
+    path: charts/zebo-app
+    helm:
+      valueFiles:
+        - values-dev.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: zebo-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

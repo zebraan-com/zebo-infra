@@ -1,0 +1,5 @@
+image:
+  repository: ghcr.io/zebraan/zebo-app
+  tag: latest
+
+replicaCount: 1

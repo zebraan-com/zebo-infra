@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "zebo-app.fullname" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "zebo-app.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "zebo-app.name" . }}
+    spec:
+      # imagePullSecrets:
+      # - name: artifact-registry-secret
+      containers:
+      - name: app
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        # image: asia-south1-docker.pkg.dev/zebraan-gcp-zebo-dev/zebo-registry/zebo-app:latest
+        ports:
+        - containerPort: {{ .Values.containerPort }}
+        env:
+        - name: ENVIRONMENT
+          value: "base"
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "512Mi"
+          limits:
+            cpu: "300m"
+            memory: "1Gi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.containerPort }}
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 5
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: {{ .Values.containerPort }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
