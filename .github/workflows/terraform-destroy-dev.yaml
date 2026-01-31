@@ -47,6 +47,7 @@ jobs:
           node_machine_type       = "${NODE_MACHINE_TYPE}"
           min_nodes               = ${MIN_NODES}
           max_nodes               = ${MAX_NODES}
+          use_spot_instances      = ${USE_SPOT_INSTANCES}
           gke_deletion_protection = false
 
           # Secrets used by the secret_manager module
@@ -63,6 +64,8 @@ jobs:
           NODE_MACHINE_TYPE: ${{ vars.NODE_MACHINE_TYPE || 'e2-medium' }}
           MIN_NODES: ${{ vars.MIN_NODES || '0' }}
           MAX_NODES: ${{ vars.MAX_NODES || '1' }}
+          # Enable spot instances for dev to reduce costs (default: true)
+          USE_SPOT_INSTANCES: ${{ vars.USE_SPOT_INSTANCES || 'true' }}
           # Even if secrets are empty, versions will be skipped by module logic
           ZEO_DB_PASSWORD: ${{ secrets.ZEO_DB_PASSWORD }}
           ZEO_OPENAI_KEY: ${{ secrets.ZEO_OPENAI_KEY }}

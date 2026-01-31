@@ -65,3 +65,9 @@ variable "deletion_protection" {
   type        = bool
   default     = true
 }
+
+variable "use_spot_instances" {
+  description = "Whether to use spot instances for the node pool"
+  type        = bool
+  default     = false
+}

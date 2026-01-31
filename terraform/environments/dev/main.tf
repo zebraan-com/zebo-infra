@@ -84,6 +84,7 @@ module "gke_cluster" {
   node_machine_type = var.node_machine_type
   min_nodes         = var.min_nodes
   max_nodes         = var.max_nodes
+  use_spot_instances = var.use_spot_instances
 
   # Control deletion protection from env
   deletion_protection = var.gke_deletion_protection

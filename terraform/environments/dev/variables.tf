@@ -100,3 +100,9 @@ variable "terraform_service_account_email" {
   type        = string
   default     = "" # Empty by default, will auto-detect if not provided
 }
+
+variable "use_spot_instances" {
+  description = "Whether to use spot instances for GKE node pool (enabled for dev to reduce costs)"
+  type        = bool
+  default     = true
+}
