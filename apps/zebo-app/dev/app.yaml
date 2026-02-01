@@ -5,7 +5,7 @@ metadata:
 spec:
   source:
     repoURL: https://github.com/zebraan-com/zebo-infra
-    targetRevision: main
+    targetRevision: HEAD
     path: charts/zebo-app
     helm:
       valueFiles:
