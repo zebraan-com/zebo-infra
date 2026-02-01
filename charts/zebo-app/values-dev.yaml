@@ -1,1 +1,10 @@
+image:
+  repository: asia-south1-docker.pkg.dev/zebraan-gcp-zebo-dev/zebo-registry/zebo-app
+  # This sets the pull policy for images.
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: sha-17e8706
+
+containerPort: 8000
+
 replicaCount: 1

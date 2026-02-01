@@ -1,7 +1,8 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: zebo-app
+  name: zebo-app-dev
+  namespace: argocd
 spec:
   source:
     repoURL: https://github.com/zebraan-com/zebo-infra
