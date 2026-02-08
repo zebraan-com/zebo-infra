@@ -1,0 +1,16 @@
+image:
+  repository: asia-south1-docker.pkg.dev/zebraan-gcp-zebo-prod/zebo-registry/zebo-app
+  pullPolicy: IfNotPresent
+  tag: latest
+
+containerPort: 8000
+
+replicaCount: 3
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi

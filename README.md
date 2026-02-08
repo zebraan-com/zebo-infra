@@ -1,412 +1,289 @@
-# zebo-infra
-This repository contains the infrastructure for zebo AI Assistant.
+# Zebo Infrastructure - Application Deployment
 
-## zebo Terraform
+This repository contains all ArgoCD configurations and Helm charts for deploying Zebo applications across different environments.
 
-This repo provisions Google Cloud infrastructure for Zebo:
-- Project APIs (enables required services)
-- IAM service accounts (as needed by modules)
-- Artifact Registry (Docker repository)
-- GKE cluster and node pool
-- Secret Manager secrets
-
-The Terraform code is organized per environment under `terraform/environments/`.
-
-## Repository structure
+## Repository Structure
 
 ```
-terraform/
-  environments/
-    dev/
-      main.tf
-      variables.tf
-      (optionally *.tfvars)
-    prod/
-      main.tf
-      variables.tf
-  modules/
-    project/
-    artifact_registry/
-    gke/
-    secret_manager/
+zebo-infra/
+├── argocd/                    # ArgoCD configurations
+│   └── root-app.yaml         # Root ApplicationSet (discovers all apps)
+├── apps/                      # Application manifests per environment
+│   ├── dev/
+│   │   └── zebo-app.yaml    # Dev environment app definition
+│   └── prod/
+│       └── zebo-app.yaml    # Prod environment app definition
+├── charts/                    # Helm charts
+│   └── zebo-app/
+│       ├── Chart.yaml
+│       ├── values.yaml       # Default values
+│       ├── values-dev.yaml   # Dev-specific overrides
+│       ├── values-prod.yaml  # Prod-specific overrides
+│       └── templates/
+│           ├── deployment.yaml
+│           ├── service.yaml
+│           └── _helpers.tpl
+└── backup/                    # Old deployment configs (ignored)
 ```
 
-## Prerequisites
+## Strategy
 
-- A GCP project with billing enabled (default `project_id` is `zebraan-gcp-zebo-dev`)
-- IAM permissions to provision infra (Project Owner or equivalent)
-- Terraform >= 1.5.0
-- gcloud CLI and kubectl installed
+**This repository is for APPLICATION deployment only**
 
-Authenticate once with gcloud and set your default project/region:
+- All ArgoCD Application/ApplicationSet definitions live here
+- All Helm charts for applications live here
+- Environment-specific values are in `values-ENV.yaml` files
+- The `zebo-terraform` repository handles GCP infrastructure
+
+## How It Works
+
+### 1. Root ApplicationSet
+
+The `argocd/root-app.yaml` is an ApplicationSet that automatically discovers all apps:
+
+```yaml
+# Discovers all directories in apps/*
+# Creates ArgoCD Applications for each environment
+```
+
+This means:
+- Add a new file to `apps/dev/my-new-app.yaml` → automatically deployed to dev
+- Add a new file to `apps/prod/my-new-app.yaml` → automatically deployed to prod
+
+### 2. Application Definitions
+
+Each application (e.g., `apps/dev/zebo-app.yaml`) points to a Helm chart:
+
+```yaml
+spec:
+  source:
+    path: charts/zebo-app     # Points to Helm chart
+    helm:
+      valueFiles:
+      - values-dev.yaml        # Environment-specific values
+```
+
+### 3. Helm Charts
+
+Helm charts in `charts/` directory:
+- `Chart.yaml` - Chart metadata
+- `values.yaml` - Default values
+- `values-dev.yaml` - Dev environment overrides
+- `values-prod.yaml` - Prod environment overrides
+- `templates/` - Kubernetes manifests
+
+## Adding a New Application
+
+### Step 1: Create Helm Chart
 
 ```bash
-gcloud auth login
-gcloud auth application-default login
-gcloud config set project <YOUR_PROJECT_ID>
+cd charts/
+helm create my-new-app
+
+# Edit the chart templates and values
 ```
 
-## Choose your environment
-
-There are two environments available out-of-the-box:
-- `terraform/environments/dev/`
-- `terraform/environments/prod/`
-
-All commands below assume `dev`. Replace paths with `prod` to deploy production.
-
-## Configure variables
-
-You can keep using the defaults in `terraform/environments/dev/variables.tf` or override them via a `*.tfvars` file. Create `dev.tfvars` alongside `main.tf` with values for your project:
-
-```hcl
-project_id         = "zebraan-gcp-zebo-dev"         # your GCP project
-region             = "asia-south1"
-zone               = "asia-south1-a"
-
-# Artifact Registry
-registry_id        = "zebo-registry"
-
-# GKE
-cluster_name       = "zebo-gke-cluster"
-network_name       = "default"              # set to an existing VPC name if not using default
-subnetwork_name    = "default"              # set to an existing subnet name
-ip_range_pods      = "10.0.0.0/16"
-ip_range_services  = "10.96.0.0/20"
-node_machine_type  = "e2-medium"
-min_nodes          = 1
-max_nodes          = 3
-
-# Secret Manager (key-value map)
-secrets = {
-  # example: "zerodha_api" = "REPLACE_ME"
-}
-```
-
-Notes:
-- If you are using the default VPC/subnet, ensure the GKE module is configured accordingly. The module defines a custom network/subnet by default; you may set `network_name = "default"` and `subnetwork_name = "default"` and avoid creating custom resources.
-
-## Initialize and apply
-
-From the environment directory:
+### Step 2: Create Environment Values
 
 ```bash
-cd terraform/environments/dev
-terraform init
-terraform plan -var-file=dev.tfvars
-terraform apply -var-file=dev.tfvars
-```
-
-On success, Terraform will output handy commands/values such as:
-- `gke_cluster_name`
-- `gcloud_get_credentials` (a ready-to-run gcloud command)
-- `artifact_registry_repo` (e.g., `asia-south1-docker.pkg.dev/<project>/<registry>`)
-
-## Connect kubectl to the cluster
-
-Use the output `gcloud_get_credentials` or run manually:
-
-```bash
-gcloud container clusters get-credentials <cluster_name> \
-  --region <region> \
-  --project <project_id>
-
-gcloud container clusters get-credentials dev-gke-cluster --region asia-south1
-
-# View current context
-kubectl config current-context
-
-# View all contexts
-kubectl config get-contexts
-
-# List nodes in the cluster
-kubectl get nodes
-
-# List pods in the cluster
-kubectl get pods --all-namespaces
-
-# List services in the cluster
-kubectl get services --all-namespaces
-
-# List deployments in the cluster
-kubectl get deployments --all-namespaces
-
-# List configmaps in the cluster
-kubectl get configmaps --all-namespaces
-
-# List secrets in the cluster
-kubectl get secrets --all-namespaces
-
-# describe a pod
-kubectl describe pod <pod_name> -n <namespace>
-ex: kubectl describe pod zebo-app-dev-775ddf895-tbt8b -n zebo-dev
-
-# describe a deployment
-kubectl describe deployment <deployment_name> -n <namespace>
-
-# describe a configmap
-kubectl describe configmap <configmap_name> -n <namespace>
-
-# describe a secret
-kubectl describe secret <secret_name> -n <namespace>
-
-# describe a service
-kubectl describe service <service_name> -n <namespace>
-
-# logs of a pod
-kubectl logs <pod_name> -n <namespace>
-ex: kubectl logs zebo-app-dev-775ddf895-tbt8b -n zebo-dev
-
-# logs of a deployment
-kubectl logs <deployment_name> -n <namespace>
-ex: kubectl logs zebo-app-dev -n zebo-dev
-```
-
-## Build and push images to Artifact Registry
-
-Authenticate Docker to Artifact Registry and push your images:
-
-```bash
-gcloud auth configure-docker <region>-docker.pkg.dev
-
-REPO="$(terraform output -raw artifact_registry_repo)"
-IMAGE_NAME="app"   # change as needed
-TAG="v0.1.0"
-
-docker build -t ${IMAGE_NAME}:${TAG} .
-docker tag ${IMAGE_NAME}:${TAG} ${REPO}/${IMAGE_NAME}:${TAG}
-docker push ${REPO}/${IMAGE_NAME}:${TAG}
-```
-
-## Manage secrets (Secret Manager)
-
-Secrets are created from the `secrets` map variable. Update your `*.tfvars` and re-apply:
-
-```hcl
-secrets = {
-  "zerodha_api"     = "..."
-  "postgres_pwd"    = "..."
-}
+# charts/my-new-app/values-dev.yaml
+image:
+  repository: asia-south1-docker.pkg.dev/zebraan-gcp-zebo-dev/zebo-registry/my-new-app
+  tag: latest
+replicaCount: 1
 ```
 
 ```bash
-terraform apply -var-file=dev.tfvars
+# charts/my-new-app/values-prod.yaml
+image:
+  repository: asia-south1-docker.pkg.dev/zebraan-gcp-zebo-prod/zebo-registry/my-new-app
+  tag: v1.0.0
+replicaCount: 3
 ```
 
-To rotate a secret, change its value and apply again; Terraform will create a new secret version.
-
-## Destroy
-
-To tear down the environment:
+### Step 3: Create Application Manifest
 
 ```bash
-terraform destroy -var-file=dev.tfvars
+# apps/dev/my-new-app.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: my-new-app-dev
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/zebraan-com/zebo-infra.git
+    targetRevision: HEAD
+    path: charts/my-new-app
+    helm:
+      releaseName: my-new-app
+      valueFiles:
+      - values-dev.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: my-new-app-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
 ```
 
-## Common gotchas
+### Step 4: Commit and Push
 
-- VPC/Subnet: If using the default network, ensure the GKE module does not attempt to recreate networks/subnets that already exist. Set `network_name = "default"` and `subnetwork_name = "default"`.
-- IP ranges: Secondary ranges `pods` and `services` must not overlap existing ranges in your subnet.
-- Permissions: Ensure your principal has rights to manage GKE, Artifact Registry, and Secret Manager.
-
-- Deploy application manifests/Helm charts to the GKE cluster.
-- Configure Workload Identity if your workload needs to access GCP APIs.
-
-## CI/CD with GitHub Actions (Apply and Destroy)
-
-This repo includes two workflows under `.github/workflows/` for managing the `dev` environment with Terraform:
-
-- `terraform-dev.yaml` — Validate, Plan, and Apply on push to `main`
-- `terraform-destroy-dev.yaml` — Manual destroy via workflow_dispatch
-
-### Required repository secrets
-
-Set these in GitHub → `Settings` → `Secrets and variables` → `Actions` → `Secrets`:
-
-- `GCP_CREDENTIALS`: JSON key for a GCP Service Account that can manage the resources and access the Terraform state bucket.
-- `GCP_PROJECT_ID`: The GCP project ID (e.g., `zebraan-gcp-zebo-dev`).
-- `ZEO_DB_PASSWORD`, `ZEO_OPENAI_KEY`, `ZEO_MF_UTIL_KEY`: Secret Manager values (can be empty; SecretVersion creation is skipped for empty values).
-
-To create the CI service account and key locally, you can use:
-
-```
-./create_terraform_service_account.sh
-```
-
-This script:
-
-- Creates `terraform-ci@<project>.iam.gserviceaccount.com`.
-- Grants required project roles (GKE, Artifact Registry, Secret Manager, IAM, Service Usage, Compute Network, Project IAM Admin).
-- Grants `roles/storage.objectAdmin` on the GCS bucket used for Terraform state.
-- Grants `roles/iam.serviceAccountUser` on the default Compute Engine service account (required by GKE when using the default node SA).
-- Generates `key.json` (gitignored) which should be copied into the `GCP_CREDENTIALS` GitHub secret (then delete the local file).
-
-### Recommended repository variables
-
-Set these in GitHub → `Settings` → `Secrets and variables` → `Actions` → `Variables`:
-
-- `GCP_REGION` (e.g., `asia-south1`)
-- `ARTIFACT_REGISTRY_ID` (e.g., `zebo-registry`)
-- `NODE_MACHINE_TYPE` (e.g., `e2-medium)
-- `MIN_NODES` (e.g., `0`)
-- `MAX_NODES` (e.g., `1`)
-- `GKE_DELETION_PROTECTION` (default `true`; set to `false` only for destroy runs)
-
-### How the workflows work
-
-- `terraform-dev.yaml` (Apply):
-  - On push to `main`, checks out code, authenticates to GCP with `GCP_CREDENTIALS`, writes a `dev.ci.tfvars` using your repo secrets/vars, then runs `terraform init`, `fmt -check`, `validate`, `plan`, and `apply`.
-
-- `terraform-destroy-dev.yaml` (Destroy):
-  - Trigger manually via GitHub Actions → "Terraform Destroy Dev" → "Run workflow".
-  - Prompts for a confirmation string `destroy`.
-  - Writes `dev.ci.tfvars` with `gke_deletion_protection = false`, then runs `terraform plan -destroy` and `terraform destroy`.
-
-### Notes
-
-- The Terraform backend is configured in `terraform/environments/dev/provider.tf` to use a GCS bucket (`zebo-terraform-state`). Ensure the CI SA has access to this bucket.
-- If you prefer not to use a JSON key in GitHub, you can migrate the workflows to Google Workload Identity Federation. The `google-github-actions/auth` action supports this; open an issue and we can provide a WIF setup guide.
-
-## Argo CD Setup
-
-### Prerequisites
-
-1. A running GKE cluster (created via Terraform)
-2. `kubectl` configured to connect to your cluster
-3. `argocd` CLI installed ([installation guide](https://argo-cd.readthedocs.io/en/stable/cli_installation/))
-
-### Installation
-
-1. Make the installation script executable and run it:
-   ```bash
-   chmod +x install-argocd.sh
-   ./install-argocd.sh
-   ```
-   This will:
-   - Create the Argo CD namespace
-   - Install Argo CD using Kustomize
-   - Wait for Argo CD to be ready
-   - Display the initial admin password
-   - Apply the root application that manages all other applications
-
-2. Access the Argo CD UI:
-   ```bash
-   kubectl port-forward svc/argocd-server -n argocd 8080:443
-   ```
-   Then open https://localhost:8080 in your browser
-   - Username: `admin`
-   - Password: (from the installation output)
-
-### GitHub OIDC Setup (Optional but Recommended)
-
-1. Create a GitHub OAuth App:
-   - Go to GitHub Settings > Developer settings > OAuth Apps > New OAuth App
-   - Homepage URL: `https://argocd.your-domain.com` (or `https://localhost:8080` for local testing)
-   - Authorization callback URL: `https://argocd.your-domain.com/auth/callback`
-
-2. Update `argocd/config/oidc-config.yaml` with your GitHub OAuth App credentials:
-   ```yaml
-   oidc.config: |
-     name: GitHub
-     issuer: https://github.com
-     clientID: $github-client-id  # From GitHub OAuth App
-     clientSecret: $github-client-secret  # From GitHub OAuth App
-     requestedScopes: ["read:org", "user:email"]
-   ```
-
-3. Apply the OIDC configuration:
-   ```bash
-   kubectl apply -f argocd/config/oidc-config.yaml
-   kubectl rollout restart deployment argocd-server -n argocd
-   ```
-
-### Repository Structure
-
-```
-argocd/
-  applications/       # ApplicationSet definitions
-  config/            # RBAC and OIDC configurations
-  install/           # Argo CD installation manifests
-  root-application.yaml  # Root application that manages all other applications
-
-kubernetes/
-  base/              # Base kustomization and common resources
-  overlays/
-    dev/             # Development environment configuration
-    prod/            # Production environment configuration
-```
-
-### Managing Applications
-
-Applications are defined in `argocd/applications/` and automatically synced by Argo CD. The ApplicationSet will automatically discover and manage applications based on the directory structure in `kubernetes/overlays/`.
-
-### GitHub Actions Integration
-
-The repository includes GitHub Actions workflows for:
-
-1. **Deploy to Dev** (`.github/workflows/deploy-dev.yaml`):
-   - Triggered on push to main branch
-   - Builds and deploys the application to the dev environment
-
-2. **Update Image Tag** (`.github/workflows/update-image-tag.yaml`):
-   - Triggered when Dockerfile or deployment manifests change
-   - Updates the image tag in the Kubernetes manifests
-   - Creates a PR with the changes
-
-### Required GitHub Secrets
-
-Add these secrets to your GitHub repository (Settings > Secrets > Actions):
-
-- `GCP_CREDENTIALS`: JSON key for a GCP Service Account with necessary permissions
-- `GCP_PROJECT_ID`: Your GCP project ID
-- `GITHUB_TOKEN`: For creating pull requests (default `GITHUB_TOKEN` is usually sufficient)
-
-### Troubleshooting
-
-1. **Argo CD Sync Issues**:
-   ```bash
-   # Check application status
-   argocd app get <app-name>
-   
-   # View sync status
-   argocd app sync <app-name>
-   
-   # View logs
-   kubectl logs -n argocd -l app.kubernetes.io/name=argocd-application-controller
-   ```
-
-2. **Access Denied Errors**:
-   - Ensure the GCP service account has the necessary IAM permissions
-   - Check the Argo CD RBAC configuration in `argocd/config/rbac-config.yaml`
-
-3. **Image Pull Errors**:
-   - Ensure the GKE cluster has pull access to the Artifact Registry
-   - Check the image pull secret is properly configured
-
-
-
-
-
-## Clean up the Entire Google Cloud Project
-
-Clean up the entire Google Cloud Project
 ```bash
-unset GOOGLE_APPLICATION_CREDENTIALS
-unset CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE
-rm /Users/aninda/workspace/git/zebo-infra/key.json
-
-gcloud projects list
-
-gcloud projects delete zebraan-gcp-zebo-dev
+git add .
+git commit -m "feat: add my-new-app"
+git push origin main
 ```
 
-Create a new Google Cloud Project
+ArgoCD will automatically:
+1. Detect the new application
+2. Create it in the cluster
+3. Deploy using the Helm chart
+4. Keep it in sync with the repository
+
+## Deploying to Production
+
+Simply create the prod version:
+
 ```bash
-gcloud projects create zebraan-gcp-zebo-dev --name="Zebo AI Wealth manager"
-gcloud projects list
-
-
-
-## find the project number
-```bash
-gcloud projects describe $(gcloud config get-value project) --format="value(projectNumber)"
+# apps/prod/my-new-app.yaml
+# (same as dev but with values-prod.yaml)
 ```
+
+## Updating Applications
+
+### Update Image Tag
+
+```bash
+# Edit charts/zebo-app/values-dev.yaml
+image:
+  tag: sha-abc123  # New image tag
+
+git commit -am "chore: update zebo-app to sha-abc123"
+git push origin main
+```
+
+ArgoCD will automatically sync the change within minutes.
+
+### Update Configuration
+
+```bash
+# Edit charts/zebo-app/values-dev.yaml
+replicaCount: 3  # Scale up
+
+git commit -am "scale: increase zebo-app replicas to 3"
+git push origin main
+```
+
+## ArgoCD Access
+
+After deployment via `zebo-terraform`, access ArgoCD:
+
+```bash
+# Port forward to ArgoCD UI
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+
+# Get admin password
+kubectl get secret argocd-initial-admin-secret -n argocd \
+  -o jsonpath="{.data.password}" | base64 -d
+```
+
+Open: https://localhost:8080
+- Username: `admin`
+- Password: (from command above)
+
+## Troubleshooting
+
+### Check Applications
+
+```bash
+# List all applications
+kubectl get applications -n argocd
+
+# Check specific app
+kubectl describe application zebo-app-dev -n argocd
+
+# Check ApplicationSet
+kubectl get applicationset -n argocd
+```
+
+### Check Sync Status
+
+```bash
+# Via kubectl
+kubectl get application zebo-app-dev -n argocd -o jsonpath='{.status.sync.status}'
+
+# Via ArgoCD CLI (if installed)
+argocd app get zebo-app-dev
+```
+
+### Force Sync
+
+```bash
+# Via ArgoCD UI
+# Click on application → SYNC → SYNCHRONIZE
+
+# Via CLI
+argocd app sync zebo-app-dev
+
+# Via kubectl
+kubectl patch application zebo-app-dev -n argocd \
+  --type merge -p '{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"hard"}}}'
+```
+
+### View Logs
+
+```bash
+# ArgoCD controller logs
+kubectl logs -n argocd -l app.kubernetes.io/name=argocd-application-controller --tail=100
+
+# ArgoCD server logs
+kubectl logs -n argocd -l app.kubernetes.io/name=argocd-server --tail=100
+
+# Application pod logs
+kubectl logs -n zebo-dev -l app=zebo-app
+```
+
+### Common Issues
+
+**App not showing up:**
+- Check root ApplicationSet: `kubectl get applicationset -n argocd`
+- Verify repo credentials: `kubectl get secret -n argocd -l argocd.argoproj.io/secret-type=repository`
+- Check ApplicationSet logs: `kubectl logs -n argocd -l app.kubernetes.io/component=applicationset-controller`
+
+**Sync failing:**
+- Check application status: `kubectl describe application zebo-app-dev -n argocd`
+- Verify Helm chart is valid: `helm template charts/zebo-app -f charts/zebo-app/values-dev.yaml`
+- Check image exists: Verify image tag in Artifact Registry
+
+**Can't access ArgoCD UI:**
+- Verify ArgoCD is running: `kubectl get pods -n argocd`
+- Check port forward: `kubectl port-forward svc/argocd-server -n argocd 8080:443`
+- Try accessing via: `https://localhost:8080` (not http)
+
+## CI/CD Integration
+
+See `.github/workflows/update-image-tag.yaml` for automated image tag updates.
+
+## Best Practices
+
+1. **Always use environment-specific value files** (`values-dev.yaml`, `values-prod.yaml`)
+2. **Never hardcode secrets** in values files - use Secret Manager and external-secrets
+3. **Use semantic versioning** for image tags in production
+4. **Test in dev** before promoting to prod
+5. **Use ArgoCD sync waves** for ordered deployments (if needed)
+6. **Enable automated sync** for faster deployments
+7. **Use prune and self-heal** for consistency
+
+## Related Repositories
+
+- **zebo-terraform**: Infrastructure provisioning (GKE, VPC, ArgoCD installation)
+- **zebo**: Application source code and Docker images
+
+## License
+
+Apache-2.0

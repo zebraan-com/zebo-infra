@@ -3,14 +3,18 @@ kind: Application
 metadata:
   name: zebo-app-dev
   namespace: argocd
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
 spec:
+  project: default
   source:
-    repoURL: https://github.com/zebraan-com/zebo-infra
+    repoURL: https://github.com/zebraan-com/zebo-infra.git
     targetRevision: HEAD
     path: charts/zebo-app
     helm:
+      releaseName: zebo-app
       valueFiles:
-        - values-dev.yaml
+      - values-dev.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: zebo-dev
@@ -18,3 +22,11 @@ spec:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
